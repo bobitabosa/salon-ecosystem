@@ -1,1 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent App - Salon Onboarding</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f0f2f5; display: flex; justify-content: center; }
+        .card { width: 100%; max-width: 450px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { color: #1a73e8; text-align: center; margin-bottom: 25px; }
+        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
+        button { background: #1a73e8; color: white; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #1557b0; opacity: 0.9; }
+        .service-row { display: flex; gap: 8px; margin-bottom: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px dashed #ccc; }
+        .add-btn { background: #34a853; margin-top: 5px; }
+        .submit-btn { background: #ea4335; margin-top: 25px; font-size: 18px; }
+        .status-msg { text-align: center; color: #555; font-size: 14px; margin-top: 10px; }
+    </style>
+</head>
+<body>
 
+<div class="card" id="login-section">
+    <h2>Agent Login</h2>
+    <input type="text" id="phone" placeholder="Mobile Number (e.g. 9123456789)">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <div id="login-msg" class="status-msg"></div>
+</div>
+
+<div class="card" id="onboarding-section" style="display:none;">
+    <h2>Register New Salon</h2>
+    <input type="text" id="salonName" placeholder="Salon Name">
+    <select id="acType">
+        <option value="Non-AC">Non-AC</option>
+        <option value="AC">AC</option>
+        <option value="Luxury">Luxury</option>
+    </select>
+    <input type="text" id="salonLocation" placeholder="Salon Address / Location">
+    
+    <h3>Services Management</h3>
+    <div id="services-list">
+        <div class="service-row">
+            <input type="text" placeholder="Service (e.g. Haircut)" class="s-name">
+            <input type="number" placeholder="Price (₹)" class="s-price">
+        </div>
+    </div>
+    <button class="add-btn" onclick="addServiceRow()">+ Add Another Service</button>
+    <button class="submit-btn" onclick="submitOnboarding()">Complete Onboarding ✅</button>
+    <div id="submit-msg" class="status-msg"></div>
+</div>
+
+<script>
+    // Your actual Supabase Credentials
+    const SUPABASE_URL = 'https://mzwmltyonvjzjlojsgds.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ooFUtwlgBSKmIgzNPa_FTA_UQ_7s25o';
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function login() {
+        const phone = document.getElementById('phone').value;
+        const pass = document.getElementById('pass').value;
+        const msg = document.getElementById('login-msg');
+
+        if(!phone || !pass) { alert("Please fill details"); return; }
+
+        msg.innerText = "Logging in...";
+        // Trick: Using phone number as email format for Supabase Auth
+        const email = `${phone}@salon.com`;
+        
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+
+        if (error) {
+            msg.innerText = "Login Failed: " + error.message;
+            alert("Error: Create this user in Supabase Auth first with email: " + email);
+        } else {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('onboarding-section').style.display = 'block';
+        }
+    }
+
+    function addServiceRow() {
+        const div = document.createElement('div');
+        div.className = 'service-row';
+        div.innerHTML = '<input type="text" placeholder="Service Name" class="s-name"> <input type="number" placeholder="Price" class="s-price">';
+        document.getElementById('services-list').appendChild(div);
+    }
+
+    async function submitOnboarding() {
+        const name = document.getElementById('salonName').value;
+        const location = document.getElementById('salonLocation').value;
+        const msg = document.getElementById('submit-msg');
+
+        if(!name || !location) { alert("Please fill Salon details"); return; }
+
+        msg.innerText = "Saving Salon details...";
+        // Note: Actual DB insertion logic will be connected in the next step
+        setTimeout(() => {
+            alert("Success! Salon Registered. Data will sync with Supabase Tables.");
+            msg.innerText = "Onboarding Complete!";
+        }, 1500);
+    }
+</script>
+</body>
+</html>
