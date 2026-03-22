@@ -259,10 +259,6 @@
         });
     }
 
-    // AGENT & SALON ACTIONS
-    function openModal() { document.getElementById('agent-modal').style.display = 'flex'; }
-    function closeModal() { document.getElementById('agent-modal').style.display = 'none'; }
-
     async function submitNewAgent() {
         const n = document.getElementById('new-agent-name').value;
         const p = document.getElementById('new-agent-phone').value;
@@ -280,15 +276,21 @@
         syncAll();
     }
 
+    // FIXED SAVE CONFIG LOGIC
     async function saveAllConfigs() {
         const keys = ['booking_fee', 'cancel_fee', 'cancel_hours', 'onboarding_non_ac', 'onboarding_ac', 'onboarding_luxury', 'onboarding_parlour'];
-        const updates = keys.map(k => ({ key: k, value: document.getElementById('cfg_'+k).value }));
-        await sb.from('app_config').upsert(updates);
-        alert("System Fees Updated!");
+        const updates = keys.map(k => ({ 
+            key: k, 
+            value: document.getElementById('cfg_'+k).value 
+        }));
+        
+        const { error } = await sb.from('app_config').upsert(updates, { onConflict: 'key' });
+        if(error) alert("Error: " + error.message);
+        else alert("System Fees Updated!");
         syncAll();
     }
 
-    // MULTI-QR UPLOAD LOGIC
+    // FIXED BUCKET NAME 'salon-assets'
     async function uploadQRCode() {
         const cat = document.getElementById('qr_category').value;
         const fileInput = document.getElementById('qr_file');
@@ -300,11 +302,12 @@
         const filePath = `qrs/qr_${cat}_${Date.now()}.png`;
 
         status.innerText = "Uploading QR...";
-        const { data, error } = await sb.storage.from('public').upload(filePath, file);
+        // Changed bucket from 'public' to 'salon-assets'
+        const { data, error } = await sb.storage.from('salon-assets').upload(filePath, file);
 
         if (error) { status.innerText = "Error: " + error.message; return; }
 
-        const { data: { publicUrl } } = sb.storage.from('public').getPublicUrl(filePath);
+        const { data: { publicUrl } } = sb.storage.from('salon-assets').getPublicUrl(filePath);
         await sb.from('app_config').upsert({ key: `qr_url_${cat}`, value: publicUrl });
 
         status.innerText = "Upload Complete!";
